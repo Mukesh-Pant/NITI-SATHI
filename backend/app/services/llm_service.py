@@ -92,7 +92,10 @@ class LLMService:
                 max_output_tokens=10,
             ),
         )
-        return response.text.strip()
+        if hasattr(response, "text") and response.text is not None:
+            return response.text.strip()
+        # Fallback if Gemini blocked the request for safety reasons or returned no text
+        return ""
 
     def _format_chat_history(self, history: list[dict]) -> str:
         """Format chat history for the prompt."""

@@ -1,6 +1,7 @@
 import json
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, delete
+from sqlalchemy.orm import selectinload
 from app.models.session import Session
 from app.models.message import Message
 from app.schemas.chat import Citation
@@ -46,21 +47,13 @@ async def get_user_sessions(user_id: str, db: AsyncSession) -> list[dict]:
 async def get_session_with_messages(
     session_id: str, user_id: str, db: AsyncSession
 ) -> Session | None:
-    stmt = select(Session).where(Session.id == session_id, Session.user_id == user_id)
+    stmt = (
+        select(Session)
+        .options(selectinload(Session.messages))
+        .where(Session.id == session_id, Session.user_id == user_id)
+    )
     result = await db.execute(stmt)
-    session = result.scalar_one_or_none()
-
-    if session:
-        # Load messages
-        msg_stmt = (
-            select(Message)
-            .where(Message.session_id == session_id)
-            .order_by(Message.created_at)
-        )
-        msg_result = await db.execute(msg_stmt)
-        session.messages = list(msg_result.scalars().all())
-
-    return session
+    return result.scalar_one_or_none()
 
 
 async def update_session_title(

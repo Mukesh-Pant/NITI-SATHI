@@ -23,5 +23,5 @@ class Session(Base):
 
     user: Mapped["User"] = relationship(back_populates="sessions")  # noqa: F821
     messages: Mapped[list["Message"]] = relationship(  # noqa: F821
-        back_populates="session", cascade="all, delete-orphan", order_by="Message.created_at"
+        back_populates="session", cascade="all, delete-orphan", order_by="Message.created_at", passive_deletes=True
     )

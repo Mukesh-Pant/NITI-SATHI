@@ -102,10 +102,10 @@ async def hybrid_search(
                 chunk_text,
                 chunk_header,
                 page_number,
-                1 - (embedding <=> :query_embedding::vector) AS vector_score
+                1 - (embedding <=> CAST(:query_embedding AS vector)) AS vector_score
             FROM document_chunks
             WHERE embedding IS NOT NULL
-            ORDER BY embedding <=> :query_embedding::vector
+            ORDER BY embedding <=> CAST(:query_embedding AS vector)
             LIMIT :k_limit
         ),
         bm25_scores AS (

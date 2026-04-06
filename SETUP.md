@@ -223,7 +223,7 @@ The Gemini large language model (LLM) is the "brain" of NITI-SATHI. It reads leg
 
 1. Open your web browser and go to: [https://aistudio.google.com/apikey](https://aistudio.google.com/apikey)
 2. Sign in with your Google account (any Gmail account works).
-3. You will see a page titled **"API Keys"**. Click the button that says **"Create API Key"**.
+3. You will see a page titled **"API Keys"**. Click the button that says **"Create API Key"**.\-]ay7
 4. Google may ask you to select a Google Cloud project. If you do not have one, click **"Create API key in new project"**. Google will automatically create a project for you.
 5. After a moment, your API key will appear on screen. It looks like a long string of letters and numbers (e.g., `AIzaSy...`).
 6. Click the **copy** icon next to the key to copy it.
@@ -260,7 +260,7 @@ OpenAI's embedding model converts text into numbers (called "vectors") so the sy
 
 Cohere's reranking service improves search accuracy by re-ordering search results so the most relevant documents appear first.
 
-1. Open your browser and go to: [https://dashboard.cohere.com](https://dashboard.cohere.com)
+1. Open your browser and go to: [https://dashbo-ard.cohere.com](https://dashboard.cohere.com)
 2. Click **"Sign up"** and create a free account (you can sign up with Google, GitHub, or email).
 3. After signing in, you will land on the Cohere dashboard.
 4. Navigate to **"API Keys"** in the left sidebar (or go directly to [https://dashboard.cohere.com/api-keys](https://dashboard.cohere.com/api-keys)).
