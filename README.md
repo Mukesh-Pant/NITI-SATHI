@@ -36,7 +36,6 @@
 - [x] **Query Classification** — Automatic detection of legal vs. non-legal queries
 - [x] **Dark/Light Theme** — Token-based theme system with `data-theme` attribute switching
 - [x] **Landing Page** — Hero, features, how-it-works, sample Q&A, stats, CTA sections with scroll reveals
-- [x] **Static Pages** — Pricing, Docs, About, Privacy pages
 
 ---
 
@@ -45,7 +44,8 @@
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                        Nginx (Port 80)                          │
-│                      Reverse Proxy + SSE                        │
+│                   Reverse Proxy + SSE support                   │
+│              (production / server deployment only)              │
 └──────────┬──────────────────────────────────┬───────────────────┘
            │                                  │
            ▼                                  ▼
@@ -119,10 +119,6 @@ User Query
 |-------|-----------|
 | **Backend** | FastAPI 0.115 (Python 3.13), SQLAlchemy 2.0 async, Alembic |
 | **Frontend** | Next.js 16.1 (App Router), React 19, TypeScript 5, Tailwind CSS 4, shadcn/ui v4 |
-| **Fonts** | Geist, Geist Mono, Newsreader (display), Noto Serif Devanagari |
-| **Animation** | framer-motion (scroll reveals), CSS keyframes |
-| **Icons** | lucide-react |
-| **Theme** | next-themes with `data-theme` attribute tokens |
 | **Database** | PostgreSQL 17 + pgvector (relational + vector in one DB) |
 | **LLM** | Google Gemini 2.5 Flash |
 | **Embeddings** | OpenAI text-embedding-3-large (1024 dimensions) |
@@ -143,159 +139,251 @@ NITI-SATHI/
 │   │   ├── main.py                 # FastAPI application entry point
 │   │   ├── config.py               # Pydantic settings
 │   │   ├── database.py             # Async SQLAlchemy + pgvector init
-│   │   ├── dependencies.py         # Dependency injection
+│   │   ├── dependencies.py         # Dependency injection (auth guards)
 │   │   ├── models/                 # SQLAlchemy ORM models
-│   │   ├── routers/                # API route handlers (auth, chat, sessions, documents, health)
+│   │   ├── routers/                # API route handlers
 │   │   ├── schemas/                # Pydantic request/response schemas
-│   │   ├── services/               # Business logic (RAG, LLM, auth, ingestion, vector store)
+│   │   ├── services/               # Business logic (RAG, LLM, ingestion)
 │   │   ├── prompts/                # LLM prompt templates
-│   │   └── utils/                  # Helpers (security, text extraction, processing)
-│   ├── tests/
+│   │   └── utils/                  # Helpers (security, text extraction)
+│   ├── make_admin.py               # CLI tool to create/promote admin users
+│   ├── init_db.py                  # Database initialisation script
 │   ├── Dockerfile
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
-│   │   ├── app/                    # Next.js App Router pages
-│   │   │   ├── (auth)/             # Login + signup
-│   │   │   ├── (app)/              # Authenticated shell (chat, settings, admin)
-│   │   │   ├── pricing/            # Pricing page
-│   │   │   ├── docs/               # Documentation page
-│   │   │   ├── about/              # About page
-│   │   │   ├── privacy/            # Privacy + disclaimer page
-│   │   │   ├── api/chat/           # SSE proxy route
-│   │   │   ├── globals.css         # Design tokens, utility classes
-│   │   │   ├── layout.tsx          # Root layout
-│   │   │   └── page.tsx            # Landing page
-│   │   ├── components/
-│   │   │   ├── layout/             # Header, Footer, Sidebar, Reveal, ThemeProvider
-│   │   │   ├── landing/            # Hero, Features, HowItWorks, SampleQA, Stats, CTA
-│   │   │   ├── chat/               # ChatContainer, WelcomeScreen, MessageBubble, MessageInput
-│   │   │   ├── auth/               # AuthPage (shared login/signup)
-│   │   │   └── ui/                 # Logo + shadcn/ui components
-│   │   ├── contexts/               # AuthContext, SidebarContext
+│   │   ├── app/
+│   │   │   ├── (auth)/             # Login + signup pages
+│   │   │   ├── (app)/              # Authenticated shell
+│   │   │   │   ├── chat/           # Chat interface
+│   │   │   │   ├── settings/       # User settings
+│   │   │   │   └── admin/
+│   │   │   │       └── documents/  # Admin document management UI
+│   │   │   └── api/chat/           # Next.js SSE proxy route
+│   │   ├── components/             # UI components
+│   │   ├── contexts/               # Auth + sidebar contexts
 │   │   ├── hooks/                  # useChat SSE hook
-│   │   ├── lib/                    # Typed API client
+│   │   ├── lib/                    # Typed API client + constants
 │   │   └── types/                  # Shared TypeScript interfaces
+│   ├── next.config.ts              # Next.js config (rewrites for no-nginx mode)
 │   ├── Dockerfile
-│   ├── package.json
-│   └── tsconfig.json
+│   └── package.json
 ├── nginx/
-│   ├── nginx.conf
+│   ├── nginx.conf                  # Reverse proxy + SSE config
 │   └── Dockerfile
 ├── data/
 │   └── legal_documents/            # Uploaded legal document storage
-├── docker-compose.yml              # Production orchestration
-├── docker-compose.dev.yml          # Development overrides
-├── Makefile
-├── .env.example
-└── .gitignore
+├── docker-compose.yml              # Production stack (with Nginx)
+├── docker-compose.dev.yml          # Local stack (no Nginx)
+└── .env.example                    # Environment variable template
 ```
 
 ---
 
 ## Prerequisites
 
-- **Python** 3.13+
-- **Node.js** 20+
-- **PostgreSQL** 17 with [pgvector](https://github.com/pgvector/pgvector) (or use Docker)
-- **Docker** and **Docker Compose** (recommended)
-- **API Keys:** Google AI (Gemini), OpenAI (embeddings), Cohere (reranking)
+- **Docker** and **Docker Compose** — required for the recommended setup
+- **API Keys** — you need accounts and keys for three services:
+  - [Google AI Studio](https://aistudio.google.com/) — Gemini LLM
+  - [OpenAI Platform](https://platform.openai.com/) — text embeddings
+  - [Cohere](https://cohere.com/) — neural reranking
 
 ---
 
-## Quick Start
+## Getting Started (Full Guide)
 
-### Using Docker (Recommended)
+### Step 1 — Clone the repository
 
 ```bash
-# 1. Clone the repository
 git clone https://github.com/Mukesh-Pant/NITI-SATHI.git
 cd NITI-SATHI
+```
 
-# 2. Configure environment
+### Step 2 — Create your `.env` file
+
+```bash
 cp .env.example .env
-# Edit .env with your API keys and secrets
+```
 
-# 3. Build and start all services
+Open `.env` and fill in every value:
+
+```env
+GOOGLE_API_KEY=your_google_ai_api_key
+OPENAI_API_KEY=your_openai_api_key
+COHERE_API_KEY=your_cohere_api_key
+POSTGRES_PASSWORD=choose_a_strong_password
+JWT_SECRET_KEY=choose_a_long_random_secret
+```
+
+> All other variables in `.env.example` have working defaults and do not need to be changed for a first run.
+
+### Step 3 — Choose your run mode
+
+#### Option A: Local / personal machine (no Nginx, recommended for testing)
+
+Runs three containers — database, backend, frontend. The frontend proxies API calls internally so no reverse proxy is needed.
+
+```bash
+docker compose -f docker-compose.dev.yml up --build
+```
+
+Access the app at **http://localhost:3000**
+
+#### Option B: Server / VM deployment (with Nginx on port 80)
+
+Runs all four containers including Nginx as the single entry point.
+
+```bash
 docker compose up --build
-
-# 4. Visit
-# Frontend: http://localhost
-# API Docs: http://localhost/api/docs
 ```
 
-### Local Development
+Access the app at **http://your-server-ip** (port 80)
+
+> **Which one should I use?**
+> Use Option A on your laptop or any machine where you just want to test the app.
+> Use Option B when deploying to a VM, EC2 instance, or any machine intended to serve real users.
+
+---
+
+### Step 4 — Create your first admin user
+
+The app requires at least one admin user to upload legal documents. There are two ways to do this.
+
+#### Option A — Promote an account you already signed up with
+
+First sign up normally at `/signup`, then run:
 
 ```bash
-# Backend
-cd backend
-python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-
-# Frontend (separate terminal)
-cd frontend
-npm install
-npm run dev                     # http://localhost:3000
+# Replace the email with whichever account you signed up with
+docker exec -it niti-sathi-backend-1 python make_admin.py promote your@email.com
 ```
 
-### Makefile
+#### Option B — Create a brand-new admin account from the command line
 
 ```bash
-make dev-backend    # Start backend with hot reload
-make dev-frontend   # Start frontend dev server
-make build          # Build Docker images
-make deploy         # Start all containers (detached)
-make stop           # Stop all containers
-make logs           # Tail container logs
+docker exec -it niti-sathi-backend-1 python make_admin.py create admin@example.com "Your Name" yourpassword
 ```
+
+After either option, **log out and log back in** so your session picks up the admin role.
+
+#### Verify it worked
+
+```bash
+docker exec -it niti-sathi-backend-1 python make_admin.py list
+```
+
+> **Note for `docker-compose.dev.yml` users:** the container name is the same — `niti-sathi-backend-1`.
+
+---
+
+### Step 5 — Upload legal documents
+
+Once logged in as an admin, navigate to:
+
+```
+http://localhost:3000/admin/documents        # local mode
+http://your-server-ip/admin/documents       # server mode
+```
+
+You can drag-and-drop or click to upload files. Supported formats:
+
+| Format | Extension |
+|--------|-----------|
+| PDF | `.pdf` |
+| Word document | `.docx`, `.doc` |
+| Web page | `.html`, `.htm` |
+
+Each upload is processed in the background:
+1. Text is extracted from the file
+2. Text is split into overlapping chunks
+3. Each chunk is embedded via OpenAI (`text-embedding-3-large`)
+4. Chunks + vectors are stored in PostgreSQL
+5. Status changes from **Indexing** → **Ready**
+
+Wait until all documents show **Ready** before querying. Large documents (100+ pages) may take a few minutes.
+
+---
+
+### Step 6 — Start chatting
+
+Navigate to `/chat` and ask any question about Nepali law. Every response is grounded in the documents you uploaded and includes numbered citation cards.
+
+---
+
+## Admin Seeding Script Reference
+
+`backend/make_admin.py` is a standalone CLI tool for managing admin users. Run it inside the backend container with `docker exec`.
+
+```bash
+# Promote an existing registered user to admin
+docker exec -it niti-sathi-backend-1 python make_admin.py promote <email>
+
+# Create a new admin user (skips signup — useful for fresh deployments)
+docker exec -it niti-sathi-backend-1 python make_admin.py create <email> "<Full Name>" <password>
+
+# List all current admin accounts
+docker exec -it niti-sathi-backend-1 python make_admin.py list
+```
+
+The script is idempotent — running `promote` on an already-admin account prints a notice and makes no changes.
 
 ---
 
 ## Environment Variables
 
-Copy `.env.example` to `.env`:
-
-| Variable | Description |
-|----------|-------------|
-| `GOOGLE_API_KEY` | Google AI API key (Gemini 2.5 Flash) |
-| `OPENAI_API_KEY` | OpenAI API key (text-embedding-3-large) |
-| `COHERE_API_KEY` | Cohere API key (rerank-v3.5) |
-| `POSTGRES_PASSWORD` | PostgreSQL password |
-| `JWT_SECRET_KEY` | Secret for JWT signing |
-| `LLM_MODEL` | LLM model name (`gemini-2.5-flash`) |
-| `EMBEDDING_MODEL` | Embedding model (`text-embedding-3-large`) |
-| `EMBEDDING_DIMENSIONS` | Vector dimensions (`1024`) |
-| `CHUNK_SIZE` | Text chunk size in characters (`1000`) |
-| `CHUNK_OVERLAP` | Overlap between chunks (`200`) |
-| `BM25_WEIGHT` | BM25 search weight (`0.3`) |
-| `VECTOR_WEIGHT` | Vector search weight (`0.7`) |
-| `RETRIEVAL_INITIAL_K` | Initial hybrid search candidates (`20`) |
-| `RERANK_TOP_K` | Final passages after reranking (`5`) |
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `GOOGLE_API_KEY` | Google AI API key (Gemini 2.5 Flash) | — required |
+| `OPENAI_API_KEY` | OpenAI API key (embeddings) | — required |
+| `COHERE_API_KEY` | Cohere API key (reranking) | — required |
+| `POSTGRES_PASSWORD` | PostgreSQL password | `postgres` |
+| `JWT_SECRET_KEY` | Secret for JWT signing | — required |
+| `LLM_MODEL` | LLM model name | `gemini-2.5-flash` |
+| `EMBEDDING_MODEL` | Embedding model | `text-embedding-3-large` |
+| `EMBEDDING_DIMENSIONS` | Vector dimensions | `1024` |
+| `CHUNK_SIZE` | Text chunk size in characters | `1000` |
+| `CHUNK_OVERLAP` | Overlap between chunks | `200` |
+| `BM25_WEIGHT` | BM25 search weight | `0.3` |
+| `VECTOR_WEIGHT` | Vector search weight | `0.7` |
+| `RETRIEVAL_INITIAL_K` | Initial hybrid search candidates | `20` |
+| `RERANK_TOP_K` | Final passages after reranking | `5` |
 
 ---
 
 ## API Documentation
 
-With the backend running:
+With the backend running, interactive API docs are available at:
 
-- **Swagger UI:** `http://localhost:8000/docs` (or `http://localhost/api/docs` via Nginx)
+- **Swagger UI:** `http://localhost:8000/docs` (direct) or `http://localhost/api/docs` (via Nginx)
 - **ReDoc:** `http://localhost:8000/redoc`
 
 ### Key Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/auth/signup` | Register a new user |
-| `POST` | `/api/auth/login` | Authenticate and receive JWT tokens |
-| `POST` | `/api/auth/refresh` | Refresh access token |
-| `POST` | `/api/chat` | Send a message, receive streamed SSE response |
-| `GET` | `/api/sessions` | List user's chat sessions |
-| `GET` | `/api/sessions/{id}/messages` | Get messages for a session |
-| `POST` | `/api/documents/upload` | Upload a legal document (admin only) |
-| `GET` | `/api/documents` | List all ingested documents |
-| `GET` | `/api/health` | Health check |
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/api/auth/signup` | — | Register a new user |
+| `POST` | `/api/auth/login` | — | Authenticate, receive JWT tokens |
+| `POST` | `/api/auth/refresh` | — | Refresh access token |
+| `GET` | `/api/auth/me` | User | Get current user profile |
+| `GET` | `/api/sessions` | User | List chat sessions |
+| `POST` | `/api/chat` | User | Send a message (SSE stream) |
+| `POST` | `/api/documents/upload` | Admin | Upload a legal document |
+| `GET` | `/api/documents` | Admin | List all ingested documents |
+| `DELETE` | `/api/documents/{id}` | Admin | Delete a document and its vectors |
+| `GET` | `/api/health` | — | Health check |
+
+---
+
+## How Nginx Fits In
+
+The project has two run modes so that Nginx is not a requirement for local use:
+
+| Mode | Entry point | Who proxies `/api/*`? |
+|------|-------------|----------------------|
+| Local (`docker-compose.dev.yml`) | `localhost:3000` | Next.js rewrites (built in) |
+| Production (`docker-compose.yml`) | `your-ip:80` | Nginx intercepts before Next.js |
+
+In both modes the frontend is built with `NEXT_PUBLIC_API_URL=/api` (a relative path), so no URLs change between environments. The routing layer is the only difference.
 
 ---
 
