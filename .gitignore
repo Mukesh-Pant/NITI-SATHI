@@ -16,7 +16,7 @@ node_modules/
 out/
 
 # Data (keep structure, ignore content)
-data/legal_documents/*
+# data/legal_documents/*
 !data/legal_documents/.gitkeep
 data/chroma_db/*
 !data/chroma_db/.gitkeep
@@ -44,3 +44,6 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+
+#Directory
+handoff/
