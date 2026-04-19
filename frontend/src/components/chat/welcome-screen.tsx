@@ -1,42 +1,218 @@
 "use client";
 
-import { Scale, ArrowRight } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { SUGGESTION_QUESTIONS } from "@/lib/constants";
+import { useState } from "react";
+import { FileText, User, BookOpen, Shield, ArrowUpRight } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
 
 interface WelcomeScreenProps {
   onSuggestionClick: (question: string, language: string) => void;
 }
 
+const PROMPTS = [
+  {
+    icon: FileText,
+    title: "Fundamental rights",
+    text: "What are my fundamental rights under the Constitution of Nepal?",
+    cat: "Constitution",
+    lang: "en",
+  },
+  {
+    icon: User,
+    title: "Citizenship",
+    text: "How can I obtain Nepali citizenship?",
+    cat: "Rights",
+    lang: "en",
+  },
+  {
+    icon: BookOpen,
+    title: "Article 17",
+    text: "What does Article 17 say about the right to freedom?",
+    cat: "Constitution",
+    lang: "en",
+  },
+  {
+    icon: Shield,
+    title: "Labor rights",
+    text: "What are the labor rights of contract employees in Nepal?",
+    cat: "Labor",
+    lang: "en",
+  },
+];
+
+const CATEGORIES = ["Popular", "Constitution", "Civil Code", "Labor", "Business", "Family"];
+
 export function WelcomeScreen({ onSuggestionClick }: WelcomeScreenProps) {
+  const [activeCategory, setActiveCategory] = useState(0);
+
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-4 py-8">
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 mb-4">
-          <Scale className="h-8 w-8 text-primary" />
+    <div
+      style={{
+        padding: "60px 32px 120px",
+        maxWidth: 860,
+        margin: "0 auto",
+        width: "100%",
+      }}
+    >
+      {/* Logo + greeting */}
+      <div style={{ textAlign: "center", marginBottom: 48 }}>
+        <div
+          style={{
+            width: 72,
+            height: 72,
+            margin: "0 auto 24px",
+            borderRadius: 22,
+            background:
+              "linear-gradient(135deg, var(--accent), oklch(0.42 0.18 25))",
+            display: "grid",
+            placeItems: "center",
+            boxShadow: "var(--shadow-accent)",
+            position: "relative",
+          }}
+        >
+          <Logo size={36} color="white" />
+          <span
+            aria-hidden
+            style={{
+              position: "absolute",
+              inset: -6,
+              borderRadius: 26,
+              border: "1px solid var(--accent-ring)",
+              animation: "pulse-ring 2.6s ease-out infinite",
+            }}
+          />
         </div>
-        <h2 className="text-2xl font-bold mb-2">Namaste! I&apos;m NITI-SATHI</h2>
-        <p className="text-muted-foreground max-w-md">
+        <h1
+          className="display"
+          style={{ fontSize: "clamp(32px, 4vw, 46px)", marginBottom: 12 }}
+        >
+          <span style={{ fontFamily: "var(--font-devanagari)" }}>नमस्ते</span>{" "}
+          — I&apos;m Niti-Sathi.
+        </h1>
+        <p
+          style={{
+            fontSize: 16,
+            color: "var(--fg-muted)",
+            maxWidth: 520,
+            margin: "0 auto",
+            lineHeight: 1.6,
+          }}
+        >
           Your AI legal assistant for Nepali law and governance. Ask me anything
           about the Constitution, Acts, legal rights, and procedures.
         </p>
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-3 max-w-2xl w-full">
-        {SUGGESTION_QUESTIONS.map((q, i) => (
-          <Card
-            key={i}
-            className="cursor-pointer hover:bg-muted/50 transition-colors"
-            onClick={() => onSuggestionClick(q.en, "en")}
+      {/* Category pills */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          gap: 6,
+          marginBottom: 24,
+          flexWrap: "wrap",
+        }}
+      >
+        {CATEGORIES.map((c, i) => (
+          <button
+            key={c}
+            onClick={() => setActiveCategory(i)}
+            style={{
+              padding: "6px 12px",
+              borderRadius: 99,
+              border: "1px solid var(--border)",
+              background: activeCategory === i ? "var(--fg)" : "transparent",
+              color: activeCategory === i ? "var(--bg)" : "var(--fg-muted)",
+              fontSize: 13,
+              transition: "all 0.2s var(--ease)",
+              cursor: "pointer",
+            }}
           >
-            <CardContent className="p-4 flex items-start gap-3">
-              <div className="flex-1">
-                <p className="text-sm">{q.en}</p>
-              </div>
-              <ArrowRight className="h-4 w-4 shrink-0 mt-0.5 text-muted-foreground" />
-            </CardContent>
-          </Card>
+            {c}
+          </button>
         ))}
+      </div>
+
+      {/* Prompt cards */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+          gap: 12,
+        }}
+      >
+        {PROMPTS.map((p, i) => (
+          <button
+            key={i}
+            onClick={() => onSuggestionClick(p.text, p.lang)}
+            style={{
+              padding: 18,
+              borderRadius: 14,
+              border: "1px solid var(--border)",
+              background: "var(--bg-elev)",
+              textAlign: "left",
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+              transition: "all 0.25s var(--ease)",
+              cursor: "pointer",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "var(--border-strong)";
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = "var(--shadow-md)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "var(--border)";
+              e.currentTarget.style.transform = "none";
+              e.currentTarget.style.boxShadow = "none";
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 7,
+                  background: "var(--accent-soft)",
+                  color: "var(--accent)",
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
+                <p.icon size={14} />
+              </span>
+              <span className="eyebrow" style={{ fontSize: 10.5 }}>
+                {p.cat}
+              </span>
+              <ArrowUpRight
+                size={14}
+                style={{ color: "var(--fg-faint)", marginLeft: "auto" }}
+              />
+            </div>
+            <div
+              style={{
+                fontSize: 14.5,
+                color: "var(--fg)",
+                lineHeight: 1.45,
+                fontWeight: 500,
+              }}
+            >
+              {p.text}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      <div
+        style={{
+          marginTop: 32,
+          textAlign: "center",
+          fontSize: 12,
+          fontFamily: "var(--font-mono)",
+          color: "var(--fg-faint)",
+        }}
+      >
+        Grounded in 10,482 legal clauses · Updated recently
       </div>
     </div>
   );

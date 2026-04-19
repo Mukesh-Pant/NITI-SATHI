@@ -4,7 +4,40 @@ import { useAuth } from "@/contexts/auth-context";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
+import { SidebarProvider, useSidebar } from "@/contexts/sidebar-context";
 import { Loader2 } from "lucide-react";
+
+function AppShell({ children }: { children: React.ReactNode }) {
+  const { open, setOpen } = useSidebar();
+
+  return (
+    <div
+      style={{
+        height: "100vh",
+        display: "flex",
+        overflow: "hidden",
+        background: "var(--bg)",
+      }}
+    >
+      <Sidebar
+        open={open}
+        onClose={() => setOpen(false)}
+        onNewChat={() => {}}
+      />
+      <main
+        style={{
+          flex: 1,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+          minWidth: 0,
+        }}
+      >
+        {children}
+      </main>
+    </div>
+  );
+}
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -18,8 +51,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "var(--bg)",
+        }}
+      >
+        <Loader2
+          style={{ color: "var(--accent)", animation: "spin 1s linear infinite" }}
+          size={28}
+        />
       </div>
     );
   }
@@ -27,9 +71,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!user) return null;
 
   return (
-    <div className="h-screen flex overflow-hidden">
-      <Sidebar />
-      <main className="flex-1 overflow-hidden">{children}</main>
-    </div>
+    <SidebarProvider>
+      <AppShell>{children}</AppShell>
+    </SidebarProvider>
   );
 }

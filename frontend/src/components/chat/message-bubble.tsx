@@ -4,21 +4,159 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
-import rehypeHighlight from "rehype-highlight";
-import { Scale, User, Copy, Check, ChevronDown, ChevronUp, FileText } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import {
+  Copy,
+  Check,
+  RotateCcw,
+  ThumbsUp,
+  ThumbsDown,
+  Share2,
+  BookOpen,
+  ArrowUpRight,
+  Quote,
+} from "lucide-react";
+import { Logo } from "@/components/ui/logo";
 import type { Message, Citation } from "@/types";
-import { cn } from "@/lib/utils";
 
 interface MessageBubbleProps {
   message: Message;
   isStreaming?: boolean;
 }
 
+function CitationChip({ label }: { label: string }) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        padding: "4px 10px",
+        borderRadius: 6,
+        fontFamily: "var(--font-mono)",
+        fontSize: 11,
+        background: "var(--gold-soft)",
+        color: "var(--gold)",
+        border: "1px solid color-mix(in oklch, var(--gold) 40%, transparent)",
+      }}
+    >
+      <Quote size={11} />
+      {label}
+    </span>
+  );
+}
+
+function SourceCard({ num, citation }: { num: number; citation: Citation }) {
+  return (
+    <div
+      style={{
+        padding: "12px 14px",
+        borderRadius: 10,
+        background: "var(--bg-elev)",
+        border: "1px solid var(--border-faint)",
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        cursor: "pointer",
+        transition: "all 0.2s var(--ease)",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = "var(--accent-ring)";
+        e.currentTarget.style.transform = "translateX(2px)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "var(--border-faint)";
+        e.currentTarget.style.transform = "none";
+      }}
+    >
+      <span
+        style={{
+          width: 26,
+          height: 26,
+          borderRadius: 7,
+          background: "var(--gold-soft)",
+          color: "var(--gold)",
+          display: "grid",
+          placeItems: "center",
+          fontSize: 12,
+          fontWeight: 600,
+          fontFamily: "var(--font-mono)",
+          flexShrink: 0,
+        }}
+      >
+        {num}
+      </span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 500 }}>{citation.document_name}</div>
+        <div
+          style={{
+            fontSize: 12,
+            color: "var(--fg-muted)",
+            marginTop: 2,
+            fontFamily: "var(--font-mono)",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {citation.article_section ||
+            (citation.page_number ? `Page ${citation.page_number}` : "")}
+        </div>
+      </div>
+      <div
+        style={{
+          fontSize: 11,
+          color: "var(--fg-faint)",
+          fontFamily: "var(--font-mono)",
+          textAlign: "right",
+          flexShrink: 0,
+        }}
+      >
+        {(citation.relevance_score * 100).toFixed(0)}% relevant
+      </div>
+      <ArrowUpRight size={14} style={{ color: "var(--fg-faint)" }} />
+    </div>
+  );
+}
+
+function MsgAction({
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  icon: React.ElementType;
+  label?: string;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: "6px 10px",
+        borderRadius: 8,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        fontSize: 12,
+        color: "var(--fg-muted)",
+        transition: "all 0.15s var(--ease)",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "var(--bg-hover)";
+        e.currentTarget.style.color = "var(--fg)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "transparent";
+        e.currentTarget.style.color = "var(--fg-muted)";
+      }}
+    >
+      <Icon size={13} />
+      {label}
+    </button>
+  );
+}
+
 export function MessageBubble({ message, isStreaming }: MessageBubbleProps) {
   const [copied, setCopied] = useState(false);
-  const [citationsExpanded, setCitationsExpanded] = useState(false);
   const isUser = message.role === "user";
 
   const copyContent = () => {
@@ -27,110 +165,239 @@ export function MessageBubble({ message, isStreaming }: MessageBubbleProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  if (isUser) {
+    return (
+      <div
+        style={{ display: "flex", justifyContent: "flex-end", marginBottom: 32 }}
+      >
+        <div
+          style={{
+            maxWidth: "75%",
+            padding: "12px 18px",
+            background: "var(--user-bubble)",
+            color: "var(--user-bubble-fg)",
+            borderRadius: "18px 18px 4px 18px",
+            fontSize: 15,
+            lineHeight: 1.55,
+            boxShadow: "var(--shadow-sm)",
+          }}
+        >
+          {message.content}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={cn("flex gap-3 px-4 py-6", isUser ? "bg-background" : "bg-muted/30")}>
-      <Avatar className="h-8 w-8 shrink-0 mt-0.5">
-        <AvatarFallback className={cn(
-          "text-xs",
-          isUser ? "bg-primary text-primary-foreground" : "bg-emerald-600 text-white"
-        )}>
-          {isUser ? <User className="h-4 w-4" /> : <Scale className="h-4 w-4" />}
-        </AvatarFallback>
-      </Avatar>
+    <div style={{ display: "flex", gap: 16, marginBottom: 40 }}>
+      {/* Avatar */}
+      <div
+        style={{
+          width: 34,
+          height: 34,
+          borderRadius: 10,
+          background:
+            "linear-gradient(135deg, var(--accent), oklch(0.4 0.18 25))",
+          display: "grid",
+          placeItems: "center",
+          color: "white",
+          flexShrink: 0,
+          boxShadow: "var(--shadow-accent)",
+        }}
+      >
+        <Logo size={18} color="white" />
+      </div>
 
-      <div className="flex-1 min-w-0 space-y-2">
-        <p className="text-xs font-medium text-muted-foreground">
-          {isUser ? "You" : "NITI-SATHI"}
-        </p>
-
-        <div className="prose prose-sm dark:prose-invert max-w-none">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeSanitize, rehypeHighlight]}
-          >
-            {message.content}
-          </ReactMarkdown>
-          {isStreaming && !message.content && (
-            <span className="inline-flex gap-1">
-              <span className="h-2 w-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
-              <span className="h-2 w-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
-              <span className="h-2 w-2 bg-primary rounded-full animate-bounce" />
+      {/* Content */}
+      <div style={{ flex: 1, minWidth: 0, paddingTop: 4 }}>
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            marginBottom: 10,
+          }}
+        >
+          <span style={{ fontSize: 13, fontWeight: 600 }}>Niti-Sathi</span>
+          {isStreaming ? (
+            <span
+              className="chip chip-accent"
+              style={{ fontSize: 10.5 }}
+            >
+              <span
+                className="dot"
+                style={{ animation: "pulse 1.2s infinite" }}
+              />{" "}
+              streaming
             </span>
-          )}
-          {isStreaming && message.content && (
-            <span className="inline-block w-2 h-5 bg-primary animate-pulse ml-0.5" />
+          ) : (
+            <span
+              style={{
+                fontSize: 12,
+                color: "var(--fg-faint)",
+                fontFamily: "var(--font-mono)",
+              }}
+            >
+              {new Date(message.created_at).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
           )}
         </div>
 
-        {/* Citations */}
-        {!isUser && message.citations && message.citations.length > 0 && !isStreaming && (
-          <div className="mt-3">
-            <button
-              onClick={() => setCitationsExpanded(!citationsExpanded)}
-              className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+        {/* Message body */}
+        <div
+          style={{ fontSize: 15, color: "var(--fg)", lineHeight: 1.7 }}
+          className="prose-niti"
+        >
+          {message.content ? (
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeSanitize]}
+              components={{
+                p: ({ children }) => (
+                  <p style={{ marginBottom: 12, lineHeight: 1.7 }}>{children}</p>
+                ),
+                h4: ({ children }) => (
+                  <h4
+                    style={{
+                      fontFamily: "var(--font-display)",
+                      fontSize: 18,
+                      fontWeight: 500,
+                      margin: "20px 0 10px",
+                    }}
+                  >
+                    {children}
+                  </h4>
+                ),
+                strong: ({ children }) => (
+                  <strong style={{ fontWeight: 600 }}>{children}</strong>
+                ),
+                code: ({ children }) => (
+                  <code
+                    style={{
+                      fontFamily: "var(--font-mono)",
+                      fontSize: 13,
+                      background: "var(--code-bg)",
+                      padding: "2px 6px",
+                      borderRadius: 4,
+                    }}
+                  >
+                    {children}
+                  </code>
+                ),
+              }}
             >
-              <FileText className="h-3.5 w-3.5" />
-              {message.citations.length} source{message.citations.length > 1 ? "s" : ""}
-              {citationsExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-            </button>
+              {message.content}
+            </ReactMarkdown>
+          ) : null}
 
-            {citationsExpanded && (
-              <div className="mt-2 space-y-2">
-                {message.citations.map((citation, i) => (
-                  <CitationCard key={i} citation={citation} index={i + 1} />
-                ))}
-              </div>
+          {/* Streaming cursor */}
+          {isStreaming && message.content && (
+            <span
+              style={{
+                display: "inline-block",
+                width: 8,
+                height: 16,
+                background: "var(--accent)",
+                verticalAlign: "-3px",
+                marginLeft: 2,
+                animation: "blink 1s step-end infinite",
+              }}
+            />
+          )}
+
+          {/* Streaming dots for empty content */}
+          {isStreaming && !message.content && (
+            <span style={{ display: "inline-flex", gap: 3 }}>
+              {[0, 0.15, 0.3].map((delay, i) => (
+                <span
+                  key={i}
+                  style={{
+                    width: 4,
+                    height: 4,
+                    borderRadius: 99,
+                    background: "var(--accent)",
+                    display: "inline-block",
+                    animation: `pulse 1.2s ${delay}s infinite`,
+                  }}
+                />
+              ))}
+            </span>
+          )}
+        </div>
+
+        {/* Inline citation chips */}
+        {!isStreaming && message.citations && message.citations.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 14 }}>
+            {message.citations.slice(0, 3).map((c, i) => (
+              <CitationChip
+                key={i}
+                label={c.article_section || c.document_name}
+              />
+            ))}
+            {message.citations.length > 3 && (
+              <span className="chip" style={{ fontSize: 11 }}>
+                +{message.citations.length - 3} more
+              </span>
             )}
           </div>
         )}
 
-        {/* Copy button */}
-        {!isUser && message.content && !isStreaming && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs text-muted-foreground"
-            onClick={copyContent}
+        {/* Source cards */}
+        {!isStreaming && message.citations && message.citations.length > 0 && (
+          <div
+            style={{
+              marginTop: 24,
+              padding: 20,
+              borderRadius: 14,
+              border: "1px solid var(--border)",
+              background: "var(--bg-sunken)",
+            }}
           >
-            {copied ? <Check className="mr-1 h-3 w-3" /> : <Copy className="mr-1 h-3 w-3" />}
-            {copied ? "Copied" : "Copy"}
-          </Button>
+            <div
+              className="eyebrow"
+              style={{
+                marginBottom: 14,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <BookOpen size={12} /> Sources consulted ({message.citations.length})
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {message.citations.map((c, i) => (
+                <SourceCard key={i} num={i + 1} citation={c} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Action row */}
+        {!isStreaming && message.content && (
+          <div
+            style={{
+              marginTop: 20,
+              display: "flex",
+              gap: 2,
+              color: "var(--fg-muted)",
+            }}
+          >
+            <MsgAction
+              icon={copied ? Check : Copy}
+              label={copied ? "Copied" : "Copy"}
+              onClick={copyContent}
+            />
+            <MsgAction icon={RotateCcw} label="Regenerate" />
+            <MsgAction icon={ThumbsUp} />
+            <MsgAction icon={ThumbsDown} />
+            <MsgAction icon={Share2} />
+          </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function CitationCard({ citation, index }: { citation: Citation; index: number }) {
-  const [expanded, setExpanded] = useState(false);
-
-  return (
-    <div className="border rounded-lg p-3 bg-background text-sm">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="flex items-start gap-2 w-full text-left"
-      >
-        <span className="inline-flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-primary text-xs font-medium shrink-0">
-          {index}
-        </span>
-        <div className="flex-1 min-w-0">
-          <p className="font-medium truncate">{citation.document_name}</p>
-          {citation.page_number && (
-            <p className="text-xs text-muted-foreground">Page {citation.page_number}</p>
-          )}
-        </div>
-        <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", expanded && "rotate-180")} />
-      </button>
-      {expanded && (
-        <div className="mt-2 pl-7">
-          <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">
-            {citation.chunk_text}
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Relevance: {(citation.relevance_score * 100).toFixed(0)}%
-          </p>
-        </div>
-      )}
     </div>
   );
 }

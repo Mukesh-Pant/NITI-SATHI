@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Niti-Sathi — Frontend
 
-## Getting Started
+Premium Next.js frontend for the Niti-Sathi legal AI chatbot. Built with the App Router, a bespoke design token system, and real-time SSE streaming.
 
-First, run the development server:
+## Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+| Tool | Version | Purpose |
+|------|---------|---------|
+| Next.js | 16.1 | App Router, RSC, routing |
+| React | 19 | UI framework |
+| TypeScript | 5 | Type safety (strict mode) |
+| Tailwind CSS | 4 | Utility classes |
+| shadcn/ui | v4 | Base component primitives |
+| framer-motion | latest | Scroll-reveal animations |
+| lucide-react | latest | Icon system |
+| next-themes | latest | `data-theme` attribute theme switching |
+| react-markdown | latest | Markdown rendering in chat |
+| remark-gfm | latest | GFM tables and strikethrough |
+| rehype-sanitize | latest | XSS-safe HTML output |
+| react-dropzone | latest | Document upload drag-and-drop |
+| sonner | latest | Toast notifications |
+
+## Typography
+
+| CSS Variable | Font | Use |
+| --- | --- | --- |
+| `--font-sans` | Geist | Body text |
+| `--font-mono` | Geist Mono | Code, chips, metadata |
+| `--font-display` | Newsreader | Headings, display text |
+| `--font-devanagari` | Noto Serif Devanagari | Nepali text |
+
+## Theme System
+
+Themes are applied via `[data-theme="light"]` / `[data-theme="dark"]` attribute selectors (not `.dark` class). The `ThemeProvider` uses `attribute="data-theme"` from `next-themes`.
+
+Brand accent: `--accent: oklch(0.52 0.18 25)` — deep crimson.
+
+## Directory Structure
+
+```text
+src/
+├── app/
+│   ├── (auth)/             # Login + signup pages
+│   ├── (app)/              # Authenticated: chat, settings, admin
+│   ├── pricing/            # Pricing tiers
+│   ├── docs/               # Documentation
+│   ├── about/              # Team + mission
+│   ├── privacy/            # Privacy policy + disclaimer
+│   ├── api/chat/           # SSE proxy to FastAPI backend
+│   ├── globals.css         # Design tokens, utility classes, keyframes
+│   ├── layout.tsx          # Font vars, ThemeProvider, Toaster
+│   └── page.tsx            # Landing page
+├── components/
+│   ├── layout/             # Header, Footer, Sidebar, ThemeProvider, Reveal
+│   ├── landing/            # Hero, Features, HowItWorks, SampleQA, Stats, CTA
+│   ├── chat/               # ChatContainer, WelcomeScreen, MessageBubble, MessageInput
+│   ├── auth/               # AuthPage (shared login/signup component)
+│   └── ui/                 # Logo + shadcn/ui primitives
+├── contexts/               # AuthContext, SidebarContext
+├── hooks/                  # useChat (SSE streaming)
+├── lib/                    # API client
+└── types/                  # Shared TypeScript interfaces
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Development
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev       # http://localhost:3000
+npm run build     # production build
+npm run lint      # ESLint
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment
 
-## Learn More
+Create `frontend/.env.local`:
 
-To learn more about Next.js, take a look at the following resources:
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Key Conventions
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Components with `onMouseEnter`/`onMouseLeave` or hooks must declare `"use client"`.
+- Hover effects are applied via inline JS style mutations (not Tailwind hover variants), so they can reference CSS custom properties at runtime.
+- All auth flows go through `useAuth()` from `@/contexts/auth-context`.
+- SSE chat streaming goes through the `/api/chat` Next.js route (proxied to FastAPI).
+- Sidebar open/close state is shared via `SidebarContext` between `(app)/layout.tsx` and `ChatContainer`.
