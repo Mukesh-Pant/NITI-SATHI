@@ -69,7 +69,7 @@ class LLMService:
         )
 
         client = _get_client()
-        async for chunk in client.aio.models.generate_content_stream(
+        response_stream = await client.aio.models.generate_content_stream(
             model=self.model,
             contents=prompt,
             config=types.GenerateContentConfig(
@@ -77,7 +77,8 @@ class LLMService:
                 temperature=0.1,
                 max_output_tokens=2048,
             ),
-        ):
+        )
+        async for chunk in response_stream:
             if chunk.text:
                 yield chunk.text
 
