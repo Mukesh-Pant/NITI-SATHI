@@ -1,4 +1,3 @@
-
 services:
   postgres:
     image: pgvector/pgvector:pg17
@@ -20,7 +19,7 @@ services:
   backend:
     build: ./backend
     ports:
-      - "8000:8000"
+      - "12000:8000"
     volumes:
       - ./data:/app/data
     env_file:
@@ -31,6 +30,10 @@ services:
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    # Initialize DB schema then start the server
+    command: >
+      sh -c "python init_db.py &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
       interval: 30s
@@ -43,10 +46,16 @@ services:
       args:
         NEXT_PUBLIC_API_URL: /api
     ports:
-      - "3000:3000"
+      - "11000:3000"
     restart: unless-stopped
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   nginx:
     build: ./nginx
